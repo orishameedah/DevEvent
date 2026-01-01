@@ -50,16 +50,35 @@ export async function POST(req: NextRequest){
     }
 }
 
-// Fetch all events
+// // Fetch all events
+// export async function GET() {
+//     try {
+//         await connectToDatabase();
+
+//         const events = await Event.find().sort({ createdAt: -1 });
+
+//         return NextResponse.json({message: "Events fetched successfully", events }, {status: 200});
+//     } catch (e) {
+//         console.log(e)
+//         return NextResponse.json({ message: "Event Fetching Failed" }, {status: 500});
+//     }
+// }
+
+
+// 1. Force this route to be dynamic (avoids static generation issues)
+
 export async function GET() {
     try {
         await connectToDatabase();
 
-        const events = await Event.find().sort({ createdAt: -1 });
+        // 2. Add a lean() query for better performance if just reading data
+        const events = await Event.find().sort({ createdAt: -1 }).lean();
 
-        return NextResponse.json({message: "Events fetched successfully", events }, {status: 200});
+        return NextResponse.json({ message: "Events fetched successfully", events }, { status: 200 });
     } catch (e) {
-        return NextResponse.json({ message: "Event Fetching Failed" }, {status: 500});
+        // Log the actual error to your terminal so you can see WHY it failed
+        console.error("Database Error:", e); 
+        return NextResponse.json({ message: "Event Fetching Failed" }, { status: 500 });
     }
 }
 

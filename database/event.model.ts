@@ -205,7 +205,7 @@ function normalizeTime(timeString: string): string {
 /**
  * Indexes
  */
-EventSchema.index({ slug: 1 }, { unique: true });
+// EventSchema.index({ slug: 1 }, { unique: true });
 EventSchema.index({ date: 1, mode: 1 });
 
 /**
