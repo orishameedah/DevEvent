@@ -5,6 +5,7 @@ import BookEvent from '@/components/BookEvent';
 import { IEvent } from '@/database';
 import { getSimilarEventsBySlug } from '@/lib/actions/events.actions';
 import EventCard from '@/components/EventCard';
+import { cacheLife } from 'next/cache';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -45,15 +46,25 @@ const EventTags = ({ tags }: { tags: string[] }) => (
   </div>
 )
 
+
 const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
+  'use cache'
+  cacheLife('hours')
   const { slug } = await params;
+
+  // 1. Fetch the data
   const request = await fetch(`${BASE_URL}/api/events/${slug}`);
-  const { event: { description, image, organizer, overview, date, time, location, mode, agenda, audience, tags } } = await request.json();
+  const data = await request.json();
+
+  // 2. Create the 'event' variable explicitly
+  const event = data.event; 
+
+  // 3. Now you can safely destructure the properties from that variable
+  const { description, image, organizer, overview, date, time, location, mode, agenda, audience, tags } = event;
 
   if (!description) return notFound();
 
   const bookings = 10;
-
   const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug);
 
   return (
@@ -75,7 +86,6 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
 
           <section className='flex-col gap-2'>
             <h2>Event Details</h2>
-            
             <EventDetailItem icon="/icons/calendar.svg" alt="Date" label={date} />
             <EventDetailItem icon="/icons/clock.svg" alt="Time" label={time} />
             <EventDetailItem icon="/icons/pin.svg" alt="Location" label={location} />
@@ -83,16 +93,14 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
             <EventDetailItem icon="/icons/audience.svg" alt="Audience" label={audience} />
           </section>
 
-          <EventAgenda agendaItems={parseArray(agenda)} /> {/* uses parse(agenda[0]) to get the first agenda */}
+          <EventAgenda agendaItems={parseArray(agenda)} />
 
           <section className='flex-col-gap-2'>
             <h2>About the Organizer</h2>
             <p>{organizer}</p>
           </section>
 
-          <EventTags tags={parseArray(tags)} /> {/*  uses parse(tags[0]) to get the first tag */}
-
-        
+          <EventTags tags={parseArray(tags)} />
         </div>
 
         {/* right side - Booking Form */}
@@ -107,7 +115,8 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
               <p className='text-sm'>Be the first to book your spot</p>
             )}
 
-            <BookEvent/>
+            {/* Now 'event' exists, so this line will work perfectly */}
+            <BookEvent eventId={event._id || event.id} slug={event.slug} />
           </div>
         </aside>
       </div>
